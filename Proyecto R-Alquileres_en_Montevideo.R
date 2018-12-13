@@ -55,7 +55,7 @@ alquileres_df$precio=gsub("\\.","",alquileres_df$precio)%>% as.numeric()
 barrio=c("Aguada", "Arroyo Seco", "Aires Puros", "Atahualpa",
          "Bella Vista", "Bolivar", "Buceo", "Belvedere", "Brazo Oriental", 
          "Capurro", "Centro", "Colón","Barrio Sur", "Carrasco", 
-         "Cerrito", "Cord?n", "Casabo", "Cerro", "Casavalle", "Ciudad Vieja", 
+         "Cerrito", "Cordón", "Casabo", "Cerro", "Casavalle", "Ciudad Vieja", 
          "Goes", "Ituizaingó", "Jacinto Vera", "Jardines Hipódromo", "Larrañaga",
          "La Blanqueada", "La Figurita", "Las Acacias", "La Comercial", 
          "La Teja", "Lezica", "Malvin", "Maroñas", "Malvin Norte", 
