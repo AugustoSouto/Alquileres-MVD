@@ -36,7 +36,7 @@ atrib_df=stringr::str_split(alquileres_df$atributo,"\\|", simplify = TRUE) %>% d
        dplyr::rename(metraje=X1) %>% dplyr::rename(dormitorios=X2) 
 
 #saco palabras, asi queda solo el numero de metros
-atrib_df$metraje=gsub("m?", "",atrib_df$metraje )
+atrib_df$metraje=gsub("m²", "",atrib_df$metraje )
 atrib_df$metraje=gsub("totales", "",atrib_df$metraje )
 atrib_df$metraje=gsub("cubiertos", "",atrib_df$metraje )
 #convierte a numerico
@@ -52,25 +52,27 @@ alquileres_df$info=gsub("en","",alquileres_df$info) #queda "en", lo descarto man
 #lista de barrios que usa Mercado Libre para publicitar alquileres
 barrio=c("Aguada", "Arroyo Seco", "Aires Puros", "Atahualpa",
          "Bella Vista", "Bolivar", "Buceo", "Belvedere", "Brazo Oriental", 
-         "Capurro", "Centro", "Col?n","Barrio Sur", "Carrasco", 
+         "Capurro", "Centro", "Colón","Barrio Sur", "Carrasco", 
          "Cerrito", "Cord?n", "Casabo", "Cerro", "Casavalle", "Ciudad Vieja", 
-         "Goes", "Ituizaing?", "Jacinto Vera", "Jardines Hip?dromo", "Larra?aga",
+         "Goes", "Ituizaingó", "Jacinto Vera", "Jardines Hipódromo", "Larrañaga",
          "La Blanqueada", "La Figurita", "Las Acacias", "La Comercial", 
-         "La Teja", "Lezica", "Malvin", "Maro?as", "Malvin Norte", 
-         "Maro?as, Curva", "Manga", "Melilla", "Nuevo Par?s", "Pajas BlancaS",
-         "Paso de la Arena", "Prado", "Palermo", "Pe?arol", "Puerto Buceo", 
-         "Parque Batlle", "Piedras Blancas", "Punta Carretas", "Parque Rod?", 
+         "La Teja", "Lezica", "Malvin", "Maroñas", "Malvin Norte", 
+         "Maroñas, Curva", "Manga", "Melilla", "Nuevo París", "Pajas BlancaS",
+         "Paso de la Arena", "Prado", "Palermo", "Peñarol", "Puerto Buceo", 
+         "Parque Batlle", "Piedras Blancas", "Punta Carretas", "Parque Rodó", 
          "Pocitos", "Punta Gorda", "Paso Molino", "Pocitos Nuevo", "Punta Rieles",
-         "Reducto", "Santiago Vazquez", "Sayago", "Tres Cruces", "Uni?n", 
-         "Villa Biarritz", "Villa Espa?ola", "Villa Mu?oz", "Villa Dolores",
-         "Villa Garc?a", "Villa del Cerro")
+         "Reducto", "Santiago Vazquez", "Sayago", "Tres Cruces", "Unión", 
+         "Villa Biarritz", "Villa Española", "Villa Muñoz", "Villa Dolores",
+         "Villa García", "Villa del Cerro")
 
 #modifico la variable lugar para que muestre solo el barrio. El resto de los datos los descarto
 alquileres_df$lugar=str_extract(alquileres_df$lugar, paste(barrio, collapse = "|" ))
 
 
 
-##r
+##ANALISIS DE LA BASE##
+library(ggplot2)
+
 
 
 
