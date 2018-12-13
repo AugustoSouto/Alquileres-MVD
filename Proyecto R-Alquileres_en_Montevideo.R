@@ -39,9 +39,14 @@ atrib_df=stringr::str_split(alquileres_df$atributo,"\\|", simplify = TRUE) %>% d
 atrib_df$metraje=gsub("m²", "",atrib_df$metraje )
 atrib_df$metraje=gsub("totales", "",atrib_df$metraje )
 atrib_df$metraje=gsub("cubiertos", "",atrib_df$metraje )
+
 #convierte a numerico
 atrib_df$metraje=atrib_df$metraje %>% as.numeric() 
-atrib_df$dormitorios=atrib_df$dormitorios %>% as.numeric()
+
+atrib_df$dormitorios=gsub("dorms", "",atrib_df$dormitorios)
+atrib_df$dormitorios=gsub("dorm", "",atrib_df$dormitorios)
+atrib_df$dormitorios=gsub("\\.", "",atrib_df$dormitorios)
+atrib_df$dormitorios=atrib_df$dormitorios %>% as.factor() 
 
 #pego las dos variables a la base y borro la variabe atributo
 alquileres_df=alquileres_df %>% cbind(atrib_df) %>% select(-atributo)
@@ -118,6 +123,15 @@ ggplot(alquileres_df, aes(x=precio))+
   ggtitle("distribucion del precio")+
   theme(plot.title = element_text(hjust = 0.5))
 
+alq_plot= alquileres_df %>%  filter(dormitorios!="")
+
+ggplot(alq_plot, aes(fct_infreq(dormitorios)))+
+  geom_bar()+
+  theme(axis.text.x=element_text(angle=90,size=4)) +
+  labs(x="Tipo de Propiedad", y="Total ")+
+  theme_economist()+
+  ggtitle("Cantidad ")+
+  theme(plot.title = element_text(hjust = 0.5))
 
 
 
