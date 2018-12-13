@@ -49,6 +49,8 @@ alquileres_df=alquileres_df %>% cbind(atrib_df) %>% select(-atributo)
 alquileres_df$info=stringr::word(alquileres_df$info,1)
 alquileres_df$info=gsub("en","",alquileres_df$info) #queda "en", lo descarto manualmente
 
+alquileres_df$precio=gsub("\\.","",alquileres_df$precio)%>% as.numeric()
+
 #lista de barrios que usa Mercado Libre para publicitar alquileres
 barrio=c("Aguada", "Arroyo Seco", "Aires Puros", "Atahualpa",
          "Bella Vista", "Bolivar", "Buceo", "Belvedere", "Brazo Oriental", 
@@ -72,6 +74,49 @@ alquileres_df$lugar=str_extract(alquileres_df$lugar, paste(barrio, collapse = "|
 
 ##ANALISIS DE LA BASE##
 library(ggplot2)
+library(ggthemes)
+barrio_plot=alquileres_df  %>% filter(!is.na(lugar))  %>%
+              data.frame()
+
+ggplot(barrio_plot, aes(fct_rev(fct_infreq(lugar))))+
+  geom_bar()+
+  theme(axis.text.x=element_text(angle=90,size=4)) +
+  labs(x="Barrio", y="Total ")+
+  coord_flip()+
+  theme_economist()+
+  ggtitle("Cantidad de Avisos por Barrio")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+info_plot=alquileres_df  %>% filter(!is.na(info)) %>%
+  filter(info!="Llave") %>%data.frame()
+
+ggplot(info_plot, aes(fct_infreq(info)))+
+  geom_bar()+
+  theme(axis.text.x=element_text(angle=90,size=4)) +
+  labs(x="Tipo de Propiedad", y="Total ")+
+  theme_economist()+
+  ggtitle("Cantidad ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(alquileres_df, aes(x=metraje))+
+  geom_density()+
+  xlim(0,1000)
+  
+ggplot(alquileres_df, aes(x=metraje))+
+  geom_density()+
+  xlim(0,200)+
+  labs(x="Metros cuadrados", y="Densidad ")+
+  theme_economist()+
+  ggtitle("distribucion del tamaño")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplot(alquileres_df, aes(x=precio))+
+  stat_density()+
+  xlim(0,100000)+
+  labs(x="Precio", y="Densidad ")+
+  theme_economist()+
+  ggtitle("distribucion del precio")+
+  theme(plot.title = element_text(hjust = 0.5))
 
 
 
