@@ -1,0 +1,233 @@
+---
+title: Avisos de Alquiler Online
+author: "Augusto Souto-Pérez"
+date: "14 de Diciembre"
+output: 
+ pdf_document:
+  fig_caption: yes
+lang: es
+geometry: margin=3cm
+fontsize: 10pt---
+urlcolor: blue
+numbersections: yes 
+keep_tex: yes 
+header-includes: \usepackage{float}
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\newpage
+
+#Descripción del Proyecto
+
+El presente proyecto consiste en la aplicación del paquete *"rvest"* para obtener datos del mercado de inmuebles de alquiler en la ciudad de Montevideo. Este paqute nos va a permitir aproximarnos al objectivo del trabajo: describir el mercado de alquileres de la ciudad, mostrando sus principales características.
+
+Más concretamente, a través de Mercado Libre, el portal de comercio electrónico más grande del país, se buscó el termino *"alquileres en Montevideo"*, lo cual arrojó como resultado un total de 43 páginas con 49 avisos contenidos en cada una de ellas.
+
+De cada aviso publicitado se obtuvo 5 variables:
+
++ El precio del alquiler
++ El tipo de inmueble publicitado
++ El barrio donde se halla el inmueble
++ El metraje del inmueble
++ La cantidad de dormitorios del inmueble
+
+Estas variables son obtenidas de manera más o menos laboriosa: para el caso del precio de los innmuebles no se necesitaron mayores trasformaciones, para el caso del tipo de inmueble, se seleccionó la primer palabra de la descripción del apartamento. Luego, para el metraje y cantidad de dormitorios se procesaron los avisos (eliminando palabras y separando el *string* que contenía ambas variables) con algo más de trabajo. Finalmente, el barrio generalmente está mencionado en la descripción geográfica del inmueble, que incluye informnación como el numero de puerta, calle, barrio, etc. En este caso, se extrajo del *string* solamente la palabra correspondiente al barrio (según la lista de barrios que se puede aplicar en los filtros de la página) de modo de crear la variable de interés. 
+
+El código completo del trabajo se puede encontrar en mi [página personal de Github](https://github.com/AugustoSouto/Alquileres-MVD)
+
+
+
+```{r cargadata, include=FALSE, message=FALSE, warning=FALSE}
+##################PROYECTO ###############
+##################CURSO R#################
+
+#librerias
+library(tidyverse)
+library(rvest)
+
+#scrapea desde el aviso 49 al 1969 en 41 paginas#
+pags=seq(49,1969,48)
+
+#genero link desde la pagina 2 hasta la ultima#
+url=paste0("https://listado.mercadolibre.com.uy/inmuebles/alquiler/montevideo/alquileres-montevideo_Desde_", pags)
+#a?ado la primera, que tiene un link diferente#
+url[42]="https://listado.mercadolibre.com.uy/alquileres-montevideo"
+
+
+#inicializo las variables que acumulan informacion de los avisos
+precio=vector() #precio del alquiler
+atributo=vector() #metraje y cantidad de habitaciones
+info=vector()  #que tipo de inmueble es
+it=vector() #lugar, que contiene la palabra del BARRIO
+
+for(i in 1:length(url)){
+  
+  precio=c(precio, url[i] %>% read_html() %>% html_nodes(".price__fraction") %>% html_text()) 
+  atributo=c(atributo, url[i] %>% read_html() %>% html_nodes(".item__attrs") %>% html_text() )
+  info=c(info,url[i] %>% read_html() %>% html_nodes(".item__info-title") %>% html_text()) 
+  it=c(it,url[i] %>% read_html() %>% html_nodes(".item__title") %>% html_text())
+  
+}
+
+#creo el data frame con la info recolectada
+alquileres_df=data.frame(precio, atributo, info, lugar=it)
+#la variable atributo tiene dos variables, asi que las separo, en metraje y dormitorios
+
+atrib_df=stringr::str_split(alquileres_df$atributo,"\\|", simplify = TRUE) %>% data.frame() %>%
+       dplyr::rename(metraje=X1) %>% dplyr::rename(dormitorios=X2) 
+
+#saco palabras, asi queda solo el numero de metros
+atrib_df$metraje=gsub("m²", "",atrib_df$metraje )
+atrib_df$metraje=gsub("totales", "",atrib_df$metraje )
+atrib_df$metraje=gsub("cubiertos", "",atrib_df$metraje )
+
+#convierte a numerico
+atrib_df$metraje=atrib_df$metraje %>% as.numeric() 
+
+atrib_df$dormitorios=gsub("dorms", "",atrib_df$dormitorios)
+atrib_df$dormitorios=gsub("dorm", "",atrib_df$dormitorios)
+atrib_df$dormitorios=gsub("\\.", "",atrib_df$dormitorios)
+atrib_df$dormitorios=atrib_df$dormitorios %>% as.factor() 
+
+#pego las dos variables a la base y borro la variabe atributo
+alquileres_df=alquileres_df %>% cbind(atrib_df) %>% select(-atributo)
+#la primer palabra describe el inmueble, el resto del string lo descarto
+alquileres_df$info=stringr::word(alquileres_df$info,1)
+alquileres_df$info=gsub("en","",alquileres_df$info) #queda "en", lo descarto manualmente
+
+alquileres_df$precio=gsub("\\.","",alquileres_df$precio)%>% as.numeric()
+
+#lista de barrios que usa Mercado Libre para publicitar alquileres
+barrio=c("Aguada", "Arroyo Seco", "Aires Puros", "Atahualpa",
+         "Bella Vista", "Bolivar", "Buceo", "Belvedere", "Brazo Oriental", 
+         "Capurro", "Centro", "Colón","Barrio Sur", "Carrasco", 
+         "Cerrito", "Cordón", "Casabo", "Cerro", "Casavalle", "Ciudad Vieja", 
+         "Goes", "Ituizaingó", "Jacinto Vera", "Jardines Hipódromo", "Larrañaga",
+         "La Blanqueada", "La Figurita", "Las Acacias", "La Comercial", 
+         "La Teja", "Lezica", "Malvin", "Maroñas", "Malvin Norte", 
+         "Maroñas, Curva", "Manga", "Melilla", "Nuevo París", "Pajas BlancaS",
+         "Paso de la Arena", "Prado", "Palermo", "Peñarol", "Puerto Buceo", 
+         "Parque Batlle", "Piedras Blancas", "Punta Carretas", "Parque Rodó", 
+         "Pocitos", "Punta Gorda", "Paso Molino", "Pocitos Nuevo", "Punta Rieles",
+         "Reducto", "Santiago Vazquez", "Sayago", "Tres Cruces", "Unión", 
+         "Villa Biarritz", "Villa Española", "Villa Muñoz", "Villa Dolores",
+         "Villa García", "Villa del Cerro")
+
+#modifico la variable lugar para que muestre solo el barrio. El resto de los datos los descarto
+alquileres_df$lugar=str_extract(alquileres_df$lugar, paste(barrio, collapse = "|" ))
+
+
+```
+
+#Principales Resultados del Análisis Descriptivo
+
+Una vez procesada, la base luce de la siguiente manera:
+
+```{r, tabla, echo=FALSE, out.extra='', fig.pos="H" }
+kableExtra::kable(head(alquileres_df), caption = "Formato de la base") %>%   kableExtra::kable_styling(latex_options = "hold_position")
+
+```
+Como se puede notar, en algunos casos existen valores faltantes, debido a que los anuncios web no explicitaban alguna de las cinco características recabadas.
+
+##Barrios
+
+Por otra parte, los barrios con más avisos de alquiler resultaron ser `r alquileres_df %>% group_by(lugar) %>% count() %>% data.frame() %>% arrange(desc(n)) %>% slice(1) %>% select(lugar)`, seguido de `r alquileres_df %>% group_by(lugar) %>% count() %>% data.frame() %>% arrange(desc(n)) %>% slice(2) %>% select(lugar)` y `r alquileres_df %>% group_by(lugar) %>% count() %>% data.frame() %>% arrange(desc(n)) %>% slice(3) %>% select(lugar)`.
+
+En este primer aspecto, los resultados de la base van bastante de la mano con la intuición, dado que es sabido que Pocitos es el barrio con mayor densidad poblacional de la ciudad, así como también se sabe que Centro y Cordón son barrios muy populares para personas que alquilan en Montevideo, como lo son, por ejemplo, los estudiantes universitarios.
+
+```{r grafiuno, echo=FALSE, fig.cap="\\label{fig:figs}Cantidad de Avisos por Barrio", out.extra='', fig.pos="H"}
+
+##ANALISIS DE LA BASE##
+library(ggplot2)
+library(ggthemes)
+
+barrio_plot=alquileres_df  %>% filter(!is.na(lugar))  %>%
+              data.frame()
+
+
+
+ggplot(barrio_plot, aes(fct_rev(fct_infreq(lugar))))+
+  geom_bar()+
+  coord_flip()+
+  theme_economist()+
+  ggtitle("Oferta de Alquileres")+
+  theme(plot.title = element_text(hjust = 0.5))+  
+  labs(x="Barrio", y="Total ")
+
+
+```
+
+##Tipo de Inmueble
+Por otra parte, el tipo de inmueble más popular en el mercado de alquiler es el `r alquileres_df %>% group_by(info) %>% count() %>% data.frame() %>% arrange(desc(n)) %>% slice(1) %>% select(info)`, seguido, a una distancia considerable, por la `r alquileres_df %>% group_by(info) %>% count() %>% data.frame() %>% arrange(desc(n)) %>% slice(2) %>% select(info)` y el `r alquileres_df %>% group_by(info) %>% count() %>% data.frame() %>% arrange(desc(n)) %>% slice(2) %>% select(info)`. Otros tipos de inmuebles menos populares son las cocheras, oficinas y habitaciones individuales.
+
+```{r graftres, echo=FALSE, fig.cap="\\label{fig:figs}Tipos de Inmuebles en el Mercado de Alquileres", out.extra='', fig.pos="H"}
+info_plot=alquileres_df  %>% filter(!is.na(info)) %>%
+  filter(info!="Llave") %>%data.frame()
+
+cat_info=alquileres_df  %>% filter(!is.na(info)) %>%
+  filter(info!="Llave") %>% group_by(info) %>% count() %>% data.frame() %>% arrange(desc(n)) %>% filter(n>10) %>% select(info)
+
+ggplot(info_plot[info_plot$info%in%cat_info$info,], aes(fct_infreq(info)))+
+  geom_bar()+
+  theme(axis.text.x=element_text(angle=90,size=4)) +
+  labs(x="Tipo de Propiedad", y="Total ")+
+  theme_economist()+
+  ggtitle("Cantidad ")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+##Area de los Inmuebles
+
+El área de los inmuebles parece hallarse, en su grán mayoría, entre los 0 y 100 metros cuadrados, alcanzando el punto de máxima densidad en un área algo menor a los 50 metros cuadrados. Como puede observarse, los inmuebles de más de 100 metros cuadrados son minoritarios.
+```{r grafcuatro, echo=FALSE, warning=FALSE, fig.cap="\\label{fig:figs}Distribución del Metraje de los Inmuebles", out.extra='', fig.pos="H"}
+
+ggplot(alquileres_df, aes(x=metraje))+
+  geom_density()+
+  xlim(0,200)+
+  labs(x="Metros cuadrados", y="Densidad ")+
+  theme_economist()+
+  ggtitle("Distribucion del tamaño")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+##Cantidad de Dormitorios
+
+```{r grafcinco, echo=FALSE, fig.cap="\\label{fig:figs}Habitaciones y Tipo de Inmueble", out.extra='', fig.pos="H"}
+alq_plot= alquileres_df %>%  filter(dormitorios!="") %>% filter(info!="Llave")
+
+#filtro las clases con muy pocas observaciones, asi mejora la visualizacion#
+clases_dorm=alquileres_df %>%  filter(dormitorios!="") %>% filter(info!="Llave") %>% 
+           group_by(dormitorios) %>% count %>% data.frame() %>% filter(n>10) %>% select(dormitorios)
+
+ggplot(alq_plot[alq_plot$dormitorios%in%clases_dorm$dormitorios,]
+       , aes(fct_infreq(dormitorios), fill=info))+
+  geom_bar()+
+  theme(axis.text.x=element_text(angle=90,size=4)) +
+  labs(x="Dormitorios", y="Total ")+
+  theme_economist()+
+  ggtitle("Histograma ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+##Precios
+
+```{r,warning=FALSE, echo=FALSE, fig.cap="\\label{fig:figs}distribución de los Precios", out.extra='', fig.pos="H"}
+ggplot(alquileres_df, aes(x=precio))+
+  geom_density()+
+  xlim(0,50000)+
+  labs(x="Precio", y="Densidad ")+
+  theme_economist()+
+  ggtitle("Distribucion del precio")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+```
+
