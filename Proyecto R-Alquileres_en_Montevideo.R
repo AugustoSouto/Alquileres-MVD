@@ -22,7 +22,7 @@ it=vector() #lugar, que contiene la palabra del BARRIO
 
 for(i in 1:length(url)){
   
-  precio=c(precio, url[i] %>% read_html() %>% html_nodes(".price__fraction") %>% html_text()) 
+  precio=c(precio, url[i] %>% read_html() %>% html_nodes(".item__price") %>% html_text()) 
   atributo=c(atributo, url[i] %>% read_html() %>% html_nodes(".item__attrs") %>% html_text() )
   info=c(info,url[i] %>% read_html() %>% html_nodes(".item__info-title") %>% html_text()) 
   it=c(it,url[i] %>% read_html() %>% html_nodes(".item__title") %>% html_text())
@@ -54,7 +54,7 @@ alquileres_df=alquileres_df %>% cbind(atrib_df) %>% select(-atributo)
 alquileres_df$info=stringr::word(alquileres_df$info,1)
 alquileres_df$info=gsub("en","",alquileres_df$info) #queda "en", lo descarto manualmente
 
-alquileres_df$precio=gsub("\\.","",alquileres_df$precio)%>% as.numeric()
+
 
 #lista de barrios que usa Mercado Libre para publicitar alquileres
 barrio=c("Aguada", "Arroyo Seco", "Aires Puros", "Atahualpa",
@@ -75,33 +75,61 @@ barrio=c("Aguada", "Arroyo Seco", "Aires Puros", "Atahualpa",
 #modifico la variable lugar para que muestre solo el barrio. El resto de los datos los descarto
 alquileres_df$lugar=str_extract(alquileres_df$lugar, paste(barrio, collapse = "|" ))
 
+db=stringr::str_split(alquileres_df$precio,"\\$", simplify = TRUE) %>% data.frame() %>%
+  dplyr::rename(Moneda=X1) %>% dplyr::rename(Precio=X2) 
+db$Moneda=db$Moneda %>% as.numeric()
+db$Precio=gsub("S", "", db$Precio)
+db$Precio=as.numeric(db$Precio)
+db=db%>% mutate(p_hom=0) 
+
+for(i in 1:length(db$Moneda)){
+  if(db$Moneda[i]==2){db$p_hom[i]=db$Precio[i]*32}else{db$p_hom[i]=db$Precio[i]}
+}
+
+alquileres_df$precio=db$p_hom
+
 
 
 ##ANALISIS DE LA BASE##
 library(ggplot2)
 library(ggthemes)
+library(plotly)
+
 barrio_plot=alquileres_df  %>% filter(!is.na(lugar))  %>%
               data.frame()
 
+
+library(ggplot2)
+library(ggthemes)
+barrio_plot=alquileres_df  %>% filter(!is.na(lugar))  %>%
+  data.frame()
 ggplot(barrio_plot, aes(fct_rev(fct_infreq(lugar))))+
   geom_bar()+
-  theme(axis.text.x=element_text(angle=90,size=4)) +
-  labs(x="Barrio", y="Total ")+
   coord_flip()+
-  theme_economist()+
-  ggtitle("Cantidad de Avisos por Barrio")+
-  theme(plot.title = element_text(hjust = 0.5))
+  ggtitle("Oferta de Alquileres")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.y=element_text(size=5))+  
+  labs(x="Barrio", y="Total ")
+
+
 
 info_plot=alquileres_df  %>% filter(!is.na(info)) %>%
   filter(info!="Llave") %>%data.frame()
 
-ggplot(info_plot, aes(fct_infreq(info)))+
+info_plot=alquileres_df  %>% filter(!is.na(info)) %>%
+  filter(info!="Llave") %>%data.frame()
+
+cat_info=alquileres_df  %>% filter(!is.na(info)) %>%
+  filter(info!="Llave") %>% group_by(info) %>% count() %>% data.frame() %>% arrange(desc(n)) %>% filter(n>10) %>% select(info)
+
+ggplot(info_plot[info_plot$info%in%cat_info$info,], aes(fct_infreq(info)))+
   geom_bar()+
   theme(axis.text.x=element_text(angle=90,size=4)) +
   labs(x="Tipo de Propiedad", y="Total ")+
   theme_economist()+
   ggtitle("Cantidad ")+
   theme(plot.title = element_text(hjust = 0.5))
+
 
 ggplot(alquileres_df, aes(x=metraje))+
   geom_density()+
@@ -115,17 +143,75 @@ ggplot(alquileres_df, aes(x=metraje))+
   ggtitle("distribucion del tamaño")+
   theme(plot.title = element_text(hjust = 0.5))
 
-ggplot(alquileres_df, aes(x=precio))+
-  stat_density()+
-  xlim(0,100000)+
+dist_tamano_lugar=ggplot(alquileres_df, aes(x=metraje, color=lugar))+
+  geom_density()+
+  xlim(0,100)+
+  labs(x="Metros cuadrados", y="Densidad ")+
+  theme_economist()+
+  ggtitle("distribucion del tamaño")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplotly(dist_tamano_lugar)
+
+precio_lugar=ggplot(alquileres_df, aes(x=precio, color=lugar))+
+  geom_density()+
+  xlim(0,150000)+
   labs(x="Precio", y="Densidad ")+
   theme_economist()+
   ggtitle("distribucion del precio")+
   theme(plot.title = element_text(hjust = 0.5))
 
-alq_plot= alquileres_df %>%  filter(dormitorios!="")
+ggplotly(precio_lugar)
 
-ggplot(alq_plot, aes(fct_infreq(dormitorios)))+
+ggplot(alquileres_df, aes(x=metraje))+
+  geom_density()+
+  xlim(0,200)+
+  labs(x="Metros cuadrados", y="Densidad ")+
+  theme_economist()+
+  ggtitle("Distribucion del tamaño")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+alq_plot= alquileres_df %>%  filter(dormitorios!="") %>% filter(info!="Llave")
+
+#filtro las clases con muy pocas observaciones, asi mejora la visualizacion#
+alq_plot= alquileres_df %>%  filter(dormitorios!="") %>% filter(info!="Llave")
+
+#filtro las clases con muy pocas observaciones, asi mejora la visualizacion#
+clases_dorm=alquileres_df %>%  filter(dormitorios!="") %>% filter(info!="Llave") %>% 
+  group_by(dormitorios) %>% count %>% data.frame() %>% filter(n>10) %>% select(dormitorios)
+
+ggplot(alq_plot[alq_plot$dormitorios%in%clases_dorm$dormitorios,]
+       , aes(fct_infreq(dormitorios), fill=info))+
+  geom_bar()+
+  theme(axis.text.x=element_text(angle=90,size=4)) +
+  labs(x="Dormitorios", y="Total ")+
+  theme_economist()+
+  ggtitle("Histograma ")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+ggplot(alquileres_df, aes(x=precio))+
+  geom_density()+
+  xlim(0,50000)+
+  labs(x="Precio", y="Densidad ")+
+  theme_economist()+
+  ggtitle("Distribucion del precio")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+
+
+alq_plot= alquileres_df %>%  filter(dormitorios!="") %>% filter(info!="Llave")
+
+#filtro las clases con muy pocas observaciones, asi mejora la visualizacion#
+clases_dorm=alquileres_df %>%  filter(dormitorios!="") %>% filter(info!="Llave") %>% 
+           group_by(dormitorios) %>% count %>% data.frame() %>% filter(n>10) %>% select(dormitorios)
+
+ggplot(alq_plot[alq_plot$dormitorios%in%clases_dorm$dormitorios,]
+       , aes(fct_infreq(dormitorios), fill=info))+
   geom_bar()+
   theme(axis.text.x=element_text(angle=90,size=4)) +
   labs(x="Tipo de Propiedad", y="Total ")+
@@ -133,5 +219,36 @@ ggplot(alq_plot, aes(fct_infreq(dormitorios)))+
   ggtitle("Cantidad ")+
   theme(plot.title = element_text(hjust = 0.5))
 
+dorm_info=ggplot(alq_plot[alq_plot$dormitorios%in%clases_dorm$dormitorios,]
+  , aes(fct_infreq(dormitorios), fill=info))+
+  geom_bar()+
+  theme(axis.text.x=element_text(angle=90,size=4)) +
+  labs(x="Tipo de Propiedad", y="Total ")+
+  theme_economist()+
+  ggtitle("Cantidad ")+
+  theme(plot.title = element_text(hjust = 0.5))
 
+ggplotly(dorm_info)
+
+alquileres_plot=alquileres_df$dormitorios %>% as.character() %>% as.numeric()
+alquileres_plot=alquileres_df %>% filter(precio<100000) %>%  
+                filter(!is.na(dormitorios)) %>%  filter(dormitorios!="") %>% arrange(dormitorios)
+
+ggplot(alquileres_plot, aes(y=precio, x=dormitorios, fill=info) )+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)+
+  theme_economist()+
+  theme(strip.text.x = element_text(size = 8))
+
+graf=ggplot(alquileres_plot, aes(y=precio, x=dormitorios, fill=info) )+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)+
+  theme_economist()+
+  theme(strip.text.x = element_text(size = 8))
+
+ggplotly(graf)
+
+alquileres_df$dormitorios=alquileres_df$dormitorios %>% as.character() %>% as.numeric()
+
+alquileres_df$info=alquileres_df$info %>% as.character() %>% as.factor()
 
