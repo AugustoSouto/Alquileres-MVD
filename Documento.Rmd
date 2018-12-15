@@ -144,7 +144,7 @@ Por otra parte, los barrios con más avisos de alquiler resultaron ser `r alquil
 
 En este primer aspecto, los resultados de la base van bastante de la mano con la intuición, dado que es sabido que Pocitos es el barrio con mayor densidad poblacional de la ciudad, así como también se sabe que Centro y Cordón son barrios muy populares para personas que alquilan en Montevideo, como lo son, por ejemplo, los estudiantes universitarios.
 
-```{r grafiuno, echo=FALSE, fig.cap="\\label{fig:figs}Cantidad de Avisos por Barrio", out.extra='', fig.pos="H"}
+```{r grafiuno,fig.width=5, fig.height=3,fig.align = "center", echo=FALSE, fig.cap="\\label{fig:figs}Cantidad de Avisos por Barrio", out.extra='', fig.pos="H"}
 ##ANALISIS DE LA BASE##
 library(ggplot2)
 library(ggthemes)
@@ -162,7 +162,7 @@ ggplot(barrio_plot, aes(fct_rev(fct_infreq(lugar))))+
 
 
 
-```{r, graf_adicional, echo=FALSE, fig.cap="\\label{fig:figs}Tipos de Inmuebles en el Mercado de Alquileres", out.extra='', fig.pos="H"}
+```{r, tab_adicional, echo=FALSE, fig.cap="\\label{fig:figs}Tipos de Inmuebles en el Mercado de Alquileres", out.extra='', fig.pos="H"}
 tabla_barrios=alquileres_df  %>% na.omit() %>% filter(dormitorios!="") %>% group_by(lugar) %>% summarise(media_precio=median(precio), n=n(), media_metros=median(metraje)) %>% filter(n>10) %>% arrange(desc(media_precio)) %>% data.frame() 
 
 
@@ -181,7 +181,7 @@ kableExtra::kable(tabla_barrios, caption = "Datos Generales") %>%   kableExtra::
 
 Por otra parte, el tipo de inmueble más popular en el mercado de alquiler es el `r alquileres_df %>% group_by(info) %>% count() %>% data.frame() %>% arrange(desc(n)) %>% slice(1) %>% select(info)`, seguido, a una distancia considerable, por la `r alquileres_df %>% group_by(info) %>% count() %>% data.frame() %>% arrange(desc(n)) %>% slice(2) %>% select(info)` y el `r alquileres_df %>% group_by(info) %>% count() %>% data.frame() %>% arrange(desc(n)) %>% slice(2) %>% select(info)`. Otros tipos de inmuebles menos populares son las cocheras, oficinas y habitaciones individuales.
 
-```{r graftres, echo=FALSE, fig.cap="\\label{fig:figs}Tipos de Inmuebles en el Mercado de Alquileres", out.extra='', fig.pos="H"}
+```{r grafidos,fig.width=5, fig.height=3,fig.align = "center", echo=FALSE, fig.cap="\\label{fig:figs}Tipos de Inmuebles en el Mercado de Alquileres", out.extra='', fig.pos="H"}
 info_plot=alquileres_df  %>% filter(!is.na(info)) %>%
   filter(info!="Llave") %>%data.frame()
 
@@ -200,7 +200,7 @@ ggplot(info_plot[info_plot$info%in%cat_info$info,], aes(fct_infreq(info)))+
 ##Area de los Inmuebles
 
 El área de los inmuebles parece hallarse, en su grán mayoría, entre los 0 y 100 metros cuadrados, alcanzando el punto de máxima densidad en un área algo menor a los 50 metros cuadrados. Como puede observarse, los inmuebles de más de 100 metros cuadrados son minoritarios.
-```{r grafcuatro, echo=FALSE, warning=FALSE, fig.cap="\\label{fig:figs}Distribución del Metraje de los Inmuebles", out.extra='', fig.pos="H"}
+```{r grafitres,fig.width=5, fig.height=3,fig.align = "center", echo=FALSE, warning=FALSE, fig.cap="\\label{fig:figs}Distribución del Metraje de los Inmuebles", out.extra='', fig.pos="H"}
 
 ggplot(alquileres_df, aes(x=metraje))+
   geom_density()+
@@ -213,9 +213,32 @@ ggplot(alquileres_df, aes(x=metraje))+
 
 ```
 
+Por otra parte, se puede graficar el área discriminando por el tipo de propiedad. Esto nos muestra que los diferentes tipos de inmuebles tienen distribuciones muy diferentes. Por ejemplo, los apartamentos tienen una moda en un punto menor a los 50 metros cuadrados, mientras que las casas tienen la moda en un punto mayor, lo cual es esperable. Las oficinas y los locales tienen una distribucion algo más dispersa, y en donde los puntos de mayor densidad están en valores menores a los 50 metros cuadrados. Por último, las habitaciones tienen un tamaño mayor al esperado, esto se debe a que, luego de chequear los anuncios publicados, se halló una gran cantida de anuncios de residencias o pensiones que publican el área de toda la residencia o pensión y no la del dormitorio particular.
+
+```{r graficuatro,fig.width=5, fig.height=3,fig.align = "center", echo=FALSE, warning=FALSE, fig.cap="\\label{fig:figs}Distribución del Metraje de los Inmuebles por Tipo", out.extra='', fig.pos="H"}
+
+met_plot= alquileres_df  %>% filter(info!="Llave") %>% group_by(info) %>% count %>% filter(n>50) %>% select(info)
+
+ggplot(alquileres_df[alquileres_df$info%in%met_plot$info,], aes(x=metraje))+
+  geom_density()+
+  xlim(0,200)+
+  facet_grid(~info)+
+  labs(x="Metros cuadrados", y="Densidad ")+
+  theme_economist()+
+  ggtitle("Distribucion del tamaño")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+
+
+
 ##Cantidad de Dormitorios
 
-```{r grafcinco, echo=FALSE, fig.cap="\\label{fig:figs}Habitaciones y Tipo de Inmueble", out.extra='', fig.pos="H"}
+A continuación se hizo un gráfico de barras para la cantidad de habitaciones por tipo de inmueble. Como se puede observar, los apartamentos tienen una mayor preponderancia en los anuncios de 1 o 2 dormitorios. Por el contrario, las casas tienen una participación mayor en los avisos de 3 o más. 
+
+```{r grafcinco, fig.width=5, fig.height=3,fig.align = "center", echo=FALSE, fig.cap="\\label{fig:figs}Habitaciones y Tipo de Inmueble", out.extra='', fig.pos="H"}
 alq_plot= alquileres_df %>%  filter(dormitorios!="") %>% filter(info!="Llave")
 
 #filtro las clases con muy pocas observaciones, asi mejora la visualizacion#
@@ -233,8 +256,9 @@ ggplot(alq_plot[alq_plot$dormitorios%in%clases_dorm$dormitorios,]
 
 ```
 ##Precios
+Los precios de los alquileres, originalmente están en pesos y en dolares. En el segundo caso, se convirtió el precio a pesos multiplicandolo por un tipo de cambio de 32 pesos. La distribución de los precios tiene su moda en un precio cercano a los 20 mil pesos. Por otra parte, la mayoría de la distribución se encuentra entre 0 y 50 mil pesos, a partir de dicho valor los anuncios son más escasos.
 
-```{r,warning=FALSE, echo=FALSE, fig.cap="\\label{fig:figs}distribución de los Precios", out.extra='', fig.pos="H"}
+```{r grafiseis,fig.width=5, fig.height=3,fig.align = "center",warning=FALSE, echo=FALSE, fig.cap="\\label{fig:figs}distribución de los Precios", out.extra='', fig.pos="H"}
 ggplot(alquileres_df, aes(x=precio))+
   geom_density()+
   xlim(0,100)+
@@ -245,6 +269,54 @@ ggplot(alquileres_df, aes(x=precio))+
 
 
 ```
+
+El precio por tipo de propiedad muestra que, en general, las oficinas y locales son los que tienen un precio más alto, seguidos por los apartamentos y casas. Las cocheras y habitaciones parecen ser los alquileres más asequibles.
+
+```{r grafisiete,fig.width=5, fig.height=3,fig.align = "center",warning=FALSE, echo=FALSE, fig.cap="\\label{fig:figs}Precio y Tipo de Inmueble", out.extra='', fig.pos="H"}
+
+
+ggplot(info_plot[info_plot$info%in%cat_info$info,], aes(y=log(precio), x=info)) +
+geom_boxplot() +
+labs(x="Tipo de Inmueble") +
+theme_economist()+
+ggtitle("")
+
+```
+
+Adicionalmente, el precio de los alquileres por dormitorios parece ir subiendo a medida que aumentamos la cantidad de habitaciones, más concretamente, esta tendencia se da hasta el cuarto dormitorio. Los precios de las propiedades con 4 y 5 dormitorios no parecen muy diferentes.
+
+```{r grafiocho,  fig.width=5, fig.height=3,fig.align = "center", warning=FALSE, echo=FALSE, fig.cap="\\label{fig:figs}Precio y Habitaciones", out.extra='', fig.pos="H"}
+ggplot(alq_plot[alq_plot$dormitorios%in%clases_dorm$dormitorios,], aes(y=log(precio), x=dormitorios)) +
+geom_boxplot() +
+labs(x="Dormitorios") +
+theme_economist()+
+ggtitle("")
+
+```
+
+#Conclusión
+
+A partir de la libreria *rvest* pudimos recoger datos de alquileres del sitio de Mercado Libre, el mayor sitio de *e-commerce* en Uruguay. Con esos datos, se creó una base de datos que consta de 5 atributos: el precio del alquiler, el tipo de inmueble, su área en metros cuadrados, el barrio y la cantidad de dormitorios. 
+
+Estos atributos se analizaron de forma descriptiva, principalmente mediante el análisis gráfico. 
+
+Entre otras cosas, pudimos ver que:
+
++ Pocitos es el lugar con más anuncios de la ciudad, aunque también Cordión y Centro tienen un rol importante en la oferta. 
+
++ El barrio con un precio más caro fue Carrasco, seguido de cerca por el barrio de Puerto del Buceo. Estos dos barrios, cuyos alquieres medios están en un nivel cercano a los 50 mil pesos, se alejan considerablemente del tercero de la lista, Punta carretas, que tiene un alquiler medio de 34 mil pesos.
+
++ Los apartamentos son el tipo de propiedad más ofertada. Casi 1200 anuncios de las más de 2000 publicaciones son de este tipo de propiedad.
+
++ La distribución del metraje tiene su punto de mayor densidad cerca de los 50 metros cuadrados. Aunque esto cambia por tipo de propiedad.
+
++ La mayoría de las publicaciones son de 1 o 2 dormitorios (excluyendo a los casos donde no se publicitan, que pueden ser monoambientes, locales comerciales, oficinas o cocheras.). Esta oferta se encuentra mayoritariamente en los apartamentos. A partir de los 3 dormitorios las casas tienen un papel más importante.
+
++ El punto de mayor densidad en la distribución de los precios está cercano a los 20 mil pesos.
+
++ A medida que aumentan los dormitorios de la publicación, aumenta el precio del alquiler.
+
++ Oficinas y locales comerciales tienen precios algo superiores a los de los apartamentos y casas.
 
 
 
