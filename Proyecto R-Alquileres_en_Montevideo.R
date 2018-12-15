@@ -79,7 +79,7 @@ db=stringr::str_split(alquileres_df$precio,"\\$", simplify = TRUE) %>% data.fram
   dplyr::rename(Moneda=X1) %>% dplyr::rename(Precio=X2) 
 db$Moneda=db$Moneda %>% as.numeric()
 db$Precio=gsub("S", "", db$Precio)
-db$Precio=as.numeric(db$Precio)
+db$Precio=db$Precio %>% as.numeric()
 db=db%>% mutate(p_hom=0) 
 
 for(i in 1:length(db$Moneda)){
