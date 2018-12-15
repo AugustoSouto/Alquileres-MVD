@@ -88,7 +88,7 @@ alquileres_df=alquileres_df %>% cbind(atrib_df) %>% select(-atributo)
 #la primer palabra describe el inmueble, el resto del string lo descarto
 alquileres_df$info=stringr::word(alquileres_df$info,1)
 alquileres_df$info=gsub("en","",alquileres_df$info) #queda "en", lo descarto manualmente
-
+alquileres_df$info=gsub("Apartamto","Apartamento",alquileres_df$info)
 
 #lista de barrios que usa Mercado Libre para publicitar alquileres
 barrio=c("Aguada", "Arroyo Seco", "Aires Puros", "Atahualpa",
@@ -144,7 +144,7 @@ Por otra parte, los barrios con más avisos de alquiler resultaron ser `r alquil
 
 En este primer aspecto, los resultados de la base van bastante de la mano con la intuición, dado que es sabido que Pocitos es el barrio con mayor densidad poblacional de la ciudad, así como también se sabe que Centro y Cordón son barrios muy populares para personas que alquilan en Montevideo, como lo son, por ejemplo, los estudiantes universitarios.
 
-```{r grafiuno,fig.width=5, fig.height=3,fig.align = "center", echo=FALSE, fig.cap="\\label{fig:figs}Cantidad de Avisos por Barrio", out.extra='', fig.pos="H"}
+```{r grafiuno,fig.width=10, fig.height=6,fig.align = "center", echo=FALSE, fig.cap="\\label{fig:figs}Cantidad de Avisos por Barrio", out.extra='', fig.pos="H"}
 ##ANALISIS DE LA BASE##
 library(ggplot2)
 library(ggthemes)
@@ -215,7 +215,7 @@ ggplot(alquileres_df, aes(x=metraje))+
 
 Por otra parte, se puede graficar el área discriminando por el tipo de propiedad. Esto nos muestra que los diferentes tipos de inmuebles tienen distribuciones muy diferentes. Por ejemplo, los apartamentos tienen una moda en un punto menor a los 50 metros cuadrados, mientras que las casas tienen la moda en un punto mayor, lo cual es esperable. Las oficinas y los locales tienen una distribucion algo más dispersa, y en donde los puntos de mayor densidad están en valores menores a los 50 metros cuadrados. Por último, las habitaciones tienen un tamaño mayor al esperado, esto se debe a que, luego de chequear los anuncios publicados, se halló una gran cantida de anuncios de residencias o pensiones que publican el área de toda la residencia o pensión y no la del dormitorio particular.
 
-```{r graficuatro,fig.width=5, fig.height=3,fig.align = "center", echo=FALSE, warning=FALSE, fig.cap="\\label{fig:figs}Distribución del Metraje de los Inmuebles por Tipo", out.extra='', fig.pos="H"}
+```{r graficuatro,fig.width=10, fig.height=6,fig.align = "center", echo=FALSE, warning=FALSE, fig.cap="\\label{fig:figs}Distribución del Metraje de los Inmuebles por Tipo", out.extra='', fig.pos="H"}
 
 met_plot= alquileres_df  %>% filter(info!="Llave") %>% group_by(info) %>% count %>% filter(n>50) %>% select(info)
 
