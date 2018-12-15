@@ -153,13 +153,15 @@ barrio_plot=alquileres_df  %>% filter(!is.na(lugar))  %>%
 ggplot(barrio_plot, aes(fct_rev(fct_infreq(lugar))))+
   geom_bar()+
   coord_flip()+
-  ggtitle("Oferta de Alquileres")+
+  ggtitle("")+
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.y=element_text(size=5))+  
   labs(x="Barrio", y="Total ")
 ```
 
 
+
+También se puede ver que los barrios con alquiler más altos son Carrasco y Puerto del Buceo, aunque como se ve, el precio por metro cuadrado es más caro en el Puerto del Buceo.
 
 
 ```{r, tab_adicional, echo=FALSE, fig.cap="\\label{fig:figs}Tipos de Inmuebles en el Mercado de Alquileres", out.extra='', fig.pos="H"}
@@ -171,6 +173,8 @@ kableExtra::kable(tabla_barrios, caption = "Datos Generales") %>%   kableExtra::
 
 
 ```
+
+
 
 
 
@@ -193,7 +197,7 @@ ggplot(info_plot[info_plot$info%in%cat_info$info,], aes(fct_infreq(info)))+
   theme(axis.text.x=element_text(angle=90,size=4)) +
   labs(x="Tipo de Propiedad", y="Total ")+
   theme_economist()+
-  ggtitle("Cantidad ")+
+  ggtitle("")+
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
@@ -207,7 +211,7 @@ ggplot(alquileres_df, aes(x=metraje))+
   xlim(0,200)+
   labs(x="Metros cuadrados", y="Densidad ")+
   theme_economist()+
-  ggtitle("Distribucion del tamaño")+
+  ggtitle("")+
   theme(plot.title = element_text(hjust = 0.5))
 
 
@@ -225,7 +229,7 @@ ggplot(alquileres_df[alquileres_df$info%in%met_plot$info,], aes(x=metraje))+
   facet_grid(~info)+
   labs(x="Metros cuadrados", y="Densidad ")+
   theme_economist()+
-  ggtitle("Distribucion del tamaño")+
+  ggtitle("")+
   theme(plot.title = element_text(hjust = 0.5))
 
 
@@ -264,7 +268,7 @@ ggplot(alquileres_df, aes(x=precio))+
   xlim(0,100)+
   labs(x="Precio", y="Densidad ")+
   theme_economist()+
-  ggtitle("Distribucion del Precio en Miles de Pesos")+
+  ggtitle("")+
   theme(plot.title = element_text(hjust = 0.5))
 
 
@@ -290,6 +294,17 @@ ggplot(alq_plot[alq_plot$dormitorios%in%clases_dorm$dormitorios,], aes(y=log(pre
 geom_boxplot() +
 labs(x="Dormitorios") +
 theme_economist()+
+ggtitle("")
+
+```
+
+Por último, se presenta otro gráfico de cajas para ver la dispersión del gasto en los diferentes barrios.
+
+```{r grafinueve,  fig.width=10, fig.height=6,fig.align = "center", warning=FALSE, echo=FALSE, fig.cap="\\label{fig:figs}Precio por Barrio", out.extra='', fig.pos="H"}
+ggplot(alquileres_df, aes(y=log(precio), x=lugar)) +
+geom_boxplot() +
+theme(axis.text.x=element_text(angle=90,size=8),axis.text.y=element_text(size=5))+ 
+labs(x="Barrio") +
 ggtitle("")
 
 ```
